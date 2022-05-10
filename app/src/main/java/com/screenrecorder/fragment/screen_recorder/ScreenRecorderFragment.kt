@@ -1,60 +1,118 @@
 package com.screenrecorder.fragment.screen_recorder
 
+import android.content.Intent
+import android.content.res.AssetFileDescriptor
+import android.media.MediaPlayer
 import android.os.Bundle
-import androidx.fragment.app.Fragment
+import android.os.Environment
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
+import androidx.core.graphics.PathUtils
 import com.screenrecorder.R
+import com.screenrecorder.databinding.FragmentScreenRecorderBinding
+import com.screenrecorder.fragment.base.BaseFragment
+import com.screenrecorder.helper.ScreenRecorderHelper
+import java.io.File
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
+class ScreenRecorderFragment :
+    BaseFragment<FragmentScreenRecorderBinding>(R.layout.fragment_screen_recorder) {
+    private var screenRecorderHelper: ScreenRecorderHelper? = null
+    private val afdd: AssetFileDescriptor by lazy { requireActivity().assets.openFd("test.aac") }
+    private var mediaPlayer: MediaPlayer? = null
 
-/**
- * A simple [Fragment] subclass.
- * Use the [ScreenRecorderFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
-class ScreenRecorderFragment : Fragment() {
-    // TODO: Rename and change types of parameters
-    private var param1: String? = null
-    private var param2: String? = null
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        setupView()
+    }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-            param2 = it.getString(ARG_PARAM2)
+    private fun setupView() {
+
+        dataBinding.btnPlay.setOnClickListener {
+            if (screenRecorderHelper == null) {
+                screenRecorderHelper =
+                    ScreenRecorderHelper(
+                        requireActivity(),
+                        this,
+                        object : ScreenRecorderHelper.OnVideoRecordListener {
+                            override fun onBeforeRecord() {
+                            }
+
+                            override fun onStartRecord() {
+                                play()
+                            }
+
+                            override fun onCancelRecord() {
+                                releasePlayer()
+                            }
+
+                            override fun onEndRecord() {
+                                releasePlayer()
+                            }
+
+                        },
+                        Environment.getExternalStorageDirectory().absolutePath + File.separator + "DCIM" + File.separator + "Camera"
+                    )
+            }
+            screenRecorderHelper?.apply {
+                if (!isRecording) {
+                    //todo: nghiên cứu mở audio
+//                    recordAudio = true
+                    startRecord()
+                }
+            }
+        }
+
+        dataBinding.btnStop.setOnClickListener {
+            screenRecorderHelper?.apply {
+                if (isRecording) {
+                    if (mediaPlayer != null) {
+                        // 如果选择带参数的 stop 方法，则录制音频无效
+                        stopRecord(mediaPlayer!!.duration.toLong(), 15 * 1000, afdd)
+                    } else {
+                        stopRecord()
+                    }
+                }
+            }
         }
     }
 
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_screen_recorder, container, false)
+    private fun play() {
+        mediaPlayer = MediaPlayer()
+        try {
+            mediaPlayer?.apply {
+                this.reset()
+                this.setDataSource(afdd.fileDescriptor, afdd.startOffset, afdd.length)
+                this.isLooping = true
+                this.prepare()
+                this.start()
+            }
+        } catch (e: Exception) {
+            Log.d("nanchen2251", "播放音乐失败")
+        } finally {
+
+        }
     }
 
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment ScreenRecorederFragment.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            ScreenRecorderFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
-                }
-            }
+    private fun releasePlayer() {
+        mediaPlayer?.apply {
+            stop()
+            release()
+        }
+        mediaPlayer = null
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+//        super.onActivityResult(requestCode, resultCode, data)
+        if (data != null) {
+            screenRecorderHelper?.onActivityResult(requestCode, resultCode, data)
+        }
+    }
+
+    override fun onDestroy() {
+        screenRecorderHelper?.clearAll()
+        afdd.close()
+        super.onDestroy()
     }
 }
