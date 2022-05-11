@@ -42,16 +42,13 @@ class ScreenRecorderFragment :
     }
 
     private fun setupView() {
+        dataBinding.btnPause.isEnabled = false
         dataBinding.btnStart.setOnClickListener {
             checkPermission()
         }
 
         dataBinding.btnPause.setOnClickListener {
-
-        }
-
-        dataBinding.btnStop.setOnClickListener {
-
+            pauseRecord()
         }
     }
 
@@ -68,6 +65,8 @@ class ScreenRecorderFragment :
     private fun startRecord() {
         if (hbRecorder.isBusyRecording) {
             hbRecorder.stopScreenRecording()
+            dataBinding.btnStart.text = "Start"
+            dataBinding.btnPause.isEnabled = false
         } else {
             quickSettings()
             val a = Context.MEDIA_PROJECTION_SERVICE
@@ -132,6 +131,8 @@ class ScreenRecorderFragment :
                 setOutputPath()
                 //Start screen recording
                 hbRecorder.startScreenRecording(data, resultCode, activity)
+                dataBinding.btnStart.text = "Stop"
+                dataBinding.btnPause.isEnabled = true
             }
         }
     }
