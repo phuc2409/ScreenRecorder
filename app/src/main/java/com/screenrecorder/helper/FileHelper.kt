@@ -8,7 +8,7 @@ class FileHelper {
     companion object {
         val path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES)
             .toString() + "/Screen Recorder"
-        val shortPath = "Movies/Screen Recorder"
+        const val shortPath = "Movies/Screen Recorder"
 
         fun createAppFolder() {
             val f = File(path)
