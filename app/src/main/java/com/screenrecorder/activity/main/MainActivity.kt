@@ -2,6 +2,7 @@ package com.screenrecorder.activity.main
 
 import android.Manifest
 import android.os.Bundle
+import androidx.fragment.app.FragmentPagerAdapter
 import com.screenrecorder.R
 import com.screenrecorder.activity.base.BaseActivity
 import com.screenrecorder.databinding.ActivityMainBinding
@@ -30,32 +31,24 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
     }
 
     private fun setupView() {
-        loadFragment(R.id.container, ScreenRecorderFragment())
-        dataBinding.bottomNavView.setOnItemSelectedListener {
-            when (it.itemId) {
-                R.id.screen_recorder -> {
-                    loadFragment(R.id.container, ScreenRecorderFragment())
-                    true
-                }
-                R.id.screen_capture -> {
-                    loadFragment(R.id.container, ScreenCaptureFragment())
-                    true
-                }
-                R.id.add -> {
-                    loadFragment(R.id.container, AddFragment())
-                    true
-                }
-                R.id.edit -> {
-                    loadFragment(R.id.container, EditFragment())
-                    true
-                }
-                R.id.settings -> {
-                    loadFragment(R.id.container, SettingsFragment())
-                    true
-                }
-                else -> false
-            }
-        }
+        dataBinding.tabLayout.setupWithViewPager(dataBinding.viewPager)
+        val mainAdapter = MainAdapter(
+            supportFragmentManager,
+            FragmentPagerAdapter.BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT
+        )
+        mainAdapter.addFragment(ScreenRecorderFragment(), "")
+        mainAdapter.addFragment(ScreenCaptureFragment(), "")
+        mainAdapter.addFragment(AddFragment(), "")
+        mainAdapter.addFragment(EditFragment(), "")
+        mainAdapter.addFragment(SettingsFragment(), "")
+        dataBinding.viewPager.offscreenPageLimit = 5
+        dataBinding.viewPager.adapter = mainAdapter
+
+        dataBinding.tabLayout.getTabAt(0)?.setIcon(R.drawable.ic_video)
+        dataBinding.tabLayout.getTabAt(1)?.setIcon(R.drawable.ic_camera)
+        dataBinding.tabLayout.getTabAt(2)?.setIcon(R.drawable.ic_add_circle)
+        dataBinding.tabLayout.getTabAt(3)?.setIcon(R.drawable.ic_edit)
+        dataBinding.tabLayout.getTabAt(4)?.setIcon(R.drawable.ic_settings)
     }
 
     override fun onRequestPermissionsResult(
