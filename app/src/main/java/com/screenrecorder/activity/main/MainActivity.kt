@@ -2,7 +2,7 @@ package com.screenrecorder.activity.main
 
 import android.Manifest
 import android.os.Bundle
-import androidx.fragment.app.FragmentPagerAdapter
+import com.google.android.material.tabs.TabLayoutMediator
 import com.screenrecorder.R
 import com.screenrecorder.activity.base.BaseActivity
 import com.screenrecorder.databinding.ActivityMainBinding
@@ -31,18 +31,18 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
     }
 
     private fun setupView() {
-        dataBinding.tabLayout.setupWithViewPager(dataBinding.viewPager)
-        val mainAdapter = MainAdapter(
-            supportFragmentManager,
-            FragmentPagerAdapter.BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT
-        )
+        val mainAdapter = MainAdapter(this)
         mainAdapter.addFragment(ScreenRecorderFragment(), "")
         mainAdapter.addFragment(ScreenCaptureFragment(), "")
         mainAdapter.addFragment(AddFragment(), "")
         mainAdapter.addFragment(EditFragment(), "")
         mainAdapter.addFragment(SettingsFragment(), "")
-        dataBinding.viewPager.offscreenPageLimit = 5
-        dataBinding.viewPager.adapter = mainAdapter
+        dataBinding.viewPager2.offscreenPageLimit = 5
+        dataBinding.viewPager2.adapter = mainAdapter
+
+        TabLayoutMediator(dataBinding.tabLayout, dataBinding.viewPager2) { tab, position ->
+            tab.text = mainAdapter.fragmentTitles[position]
+        }.attach()
 
         dataBinding.tabLayout.getTabAt(0)?.setIcon(R.drawable.ic_video)
         dataBinding.tabLayout.getTabAt(1)?.setIcon(R.drawable.ic_camera)
