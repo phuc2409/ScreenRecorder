@@ -1,60 +1,116 @@
 package com.screenrecorder.fragment.settings
 
 import android.os.Bundle
-import androidx.fragment.app.Fragment
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import androidx.preference.ListPreference
+import androidx.preference.Preference
+import androidx.preference.PreferenceFragmentCompat
+import androidx.preference.SwitchPreference
 import com.screenrecorder.R
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
-
-/**
- * A simple [Fragment] subclass.
- * Use the [SettingsFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
-class SettingsFragment : Fragment() {
-    // TODO: Rename and change types of parameters
-    private var param1: String? = null
-    private var param2: String? = null
+class SettingsFragment : PreferenceFragmentCompat(), Preference.OnPreferenceChangeListener {
+    private var keyVideoResolution: ListPreference? = null
+    private var keyAudioSource: ListPreference? = null
+    private var keyVideoEncoder: ListPreference? = null
+    private var keyVideoFps: ListPreference? = null
+    private var keyVideoBitrate: ListPreference? = null
+    private var keyOutputFormat: ListPreference? = null
+    private var keyRecordAudio: SwitchPreference? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-            param2 = it.getString(ARG_PARAM2)
+        addPreferencesFromResource(R.xml.pref_main)
+
+        keyRecordAudio = findPreference(getString(R.string.key_record_audio))
+
+        keyAudioSource = findPreference(getString(R.string.key_audio_source))
+        if (keyAudioSource != null) {
+            keyAudioSource!!.onPreferenceChangeListener = this
+        }
+
+        keyVideoEncoder = findPreference(getString(R.string.key_video_encoder))
+        if (keyVideoEncoder != null) {
+            keyVideoEncoder!!.onPreferenceChangeListener = this
+        }
+
+        keyVideoResolution = findPreference(getString(R.string.key_video_resolution))
+        if (keyVideoResolution != null) {
+            keyVideoResolution!!.onPreferenceChangeListener = this
+        }
+
+        keyVideoFps = findPreference(getString(R.string.key_video_fps))
+        if (keyVideoFps != null) {
+            keyVideoFps!!.onPreferenceChangeListener = this
+        }
+
+        keyVideoBitrate = findPreference(getString(R.string.key_video_bitrate))
+        if (keyVideoBitrate != null) {
+            keyVideoBitrate!!.onPreferenceChangeListener = this
+        }
+
+        keyOutputFormat = findPreference(getString(R.string.key_output_format))
+        if (keyOutputFormat != null) {
+            keyOutputFormat!!.onPreferenceChangeListener = this
         }
     }
 
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_settings, container, false)
+    override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
+
     }
 
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment SettingsFragment.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            SettingsFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
+    override fun onPreferenceChange(preference: Preference, newValue: Any?): Boolean {
+        val preferenceKey = preference.key
+        val listPreference: ListPreference?
+
+        when (preferenceKey) {
+            "key_audio_source" -> {
+                listPreference = findPreference(getString(R.string.key_audio_source))
+                listPreference?.let {
+                    listPreference.summary =
+                        listPreference.entries[listPreference.findIndexOfValue(newValue.toString())]
                 }
             }
+            "key_video_encoder" -> {
+                listPreference = findPreference(getString(R.string.key_video_encoder))
+                listPreference?.let {
+                    listPreference.summary =
+                        listPreference.entries[listPreference.findIndexOfValue(newValue.toString())]
+                    listPreference.value = newValue.toString()
+                }
+            }
+            "key_video_resolution" -> {
+                listPreference = findPreference(getString(R.string.key_video_resolution))
+                listPreference?.let {
+                    listPreference.summary =
+                        listPreference.entries[listPreference.findIndexOfValue(newValue.toString())]
+                    listPreference.value = newValue.toString()
+                }
+            }
+            "key_video_fps" -> {
+                listPreference = findPreference(getString(R.string.key_video_fps))
+                listPreference?.let {
+                    listPreference.summary =
+                        listPreference.entries[listPreference.findIndexOfValue(newValue.toString())]
+                    listPreference.value = newValue.toString()
+                }
+            }
+            "key_video_bitrate" -> {
+                listPreference = findPreference(getString(R.string.key_video_bitrate))
+                listPreference?.let {
+                    listPreference.summary =
+                        listPreference.entries[listPreference.findIndexOfValue(newValue.toString())]
+                    listPreference.value = newValue.toString()
+                }
+            }
+            "key_output_format" -> {
+                listPreference = findPreference(getString(R.string.key_output_format))
+                listPreference?.let {
+                    listPreference.summary =
+                        listPreference.entries[listPreference.findIndexOfValue(newValue.toString())]
+                    listPreference.value = newValue.toString()
+                }
+            }
+        }
+
+        return true
     }
 }
