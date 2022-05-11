@@ -5,6 +5,7 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.databinding.DataBindingUtil
 import androidx.databinding.ViewDataBinding
 
@@ -18,5 +19,9 @@ abstract class BaseFragment<T : ViewDataBinding>(private val layoutId: Int) : Fr
         // Inflate the layout for this fragment
         dataBinding = DataBindingUtil.inflate(inflater, layoutId, container, false)
         return dataBinding.root
+    }
+
+    protected fun showToast(s: String) {
+        Toast.makeText(context, s, Toast.LENGTH_SHORT).show()
     }
 }

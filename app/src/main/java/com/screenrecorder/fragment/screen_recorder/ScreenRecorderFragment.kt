@@ -1,118 +1,160 @@
 package com.screenrecorder.fragment.screen_recorder
 
+import android.Manifest
+import android.app.Activity
+import android.content.ContentValues
+import android.content.Context
 import android.content.Intent
-import android.content.res.AssetFileDescriptor
-import android.media.MediaPlayer
+import android.media.projection.MediaProjectionManager
+import android.os.Build
 import android.os.Bundle
-import android.os.Environment
-import android.util.Log
-import android.view.LayoutInflater
+import android.provider.MediaStore
 import android.view.View
-import android.view.ViewGroup
-import android.widget.Toast
-import androidx.core.graphics.PathUtils
+import com.hbisoft.hbrecorder.HBRecorder
+import com.hbisoft.hbrecorder.HBRecorderListener
 import com.screenrecorder.R
 import com.screenrecorder.databinding.FragmentScreenRecorderBinding
 import com.screenrecorder.fragment.base.BaseFragment
-import com.screenrecorder.helper.ScreenRecorderHelper
-import java.io.File
+import com.screenrecorder.helper.FileHelper
+import com.screenrecorder.helper.PermissionHelper
+import com.screenrecorder.helper.StringHelper
 
 class ScreenRecorderFragment :
-    BaseFragment<FragmentScreenRecorderBinding>(R.layout.fragment_screen_recorder) {
-    private var screenRecorderHelper: ScreenRecorderHelper? = null
-    private val afdd: AssetFileDescriptor by lazy { requireActivity().assets.openFd("test.aac") }
-    private var mediaPlayer: MediaPlayer? = null
+    BaseFragment<FragmentScreenRecorderBinding>(R.layout.fragment_screen_recorder),
+    HBRecorderListener {
+
+    private lateinit var permissionHelper: PermissionHelper
+    private val permissionRequestCode = 111
+    private val screenRecordRequestCode = 222
+
+    private val permissions = arrayOf(
+        Manifest.permission.READ_EXTERNAL_STORAGE,
+        Manifest.permission.WRITE_EXTERNAL_STORAGE,
+        Manifest.permission.RECORD_AUDIO
+    )
+
+    private lateinit var hbRecorder: HBRecorder
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        permissionHelper = PermissionHelper()
+        hbRecorder = HBRecorder(context, this)
         setupView()
     }
 
     private fun setupView() {
-
-        dataBinding.btnPlay.setOnClickListener {
-            if (screenRecorderHelper == null) {
-                screenRecorderHelper =
-                    ScreenRecorderHelper(
-                        requireActivity(),
-                        this,
-                        object : ScreenRecorderHelper.OnVideoRecordListener {
-                            override fun onBeforeRecord() {
-                            }
-
-                            override fun onStartRecord() {
-                                play()
-                            }
-
-                            override fun onCancelRecord() {
-                                releasePlayer()
-                            }
-
-                            override fun onEndRecord() {
-                                releasePlayer()
-                            }
-
-                        },
-                        Environment.getExternalStorageDirectory().absolutePath + File.separator + "DCIM" + File.separator + "Camera"
-                    )
-            }
-            screenRecorderHelper?.apply {
-                if (!isRecording) {
-                    //todo: nghiên cứu mở audio
-//                    recordAudio = true
-                    startRecord()
-                }
-            }
+        dataBinding.btnPause.isEnabled = false
+        dataBinding.btnStart.setOnClickListener {
+            checkPermission()
         }
 
-        dataBinding.btnStop.setOnClickListener {
-            screenRecorderHelper?.apply {
-                if (isRecording) {
-                    if (mediaPlayer != null) {
-                        // 如果选择带参数的 stop 方法，则录制音频无效
-                        stopRecord(mediaPlayer!!.duration.toLong(), 15 * 1000, afdd)
-                    } else {
-                        stopRecord()
-                    }
-                }
-            }
+        dataBinding.btnPause.setOnClickListener {
+            pauseRecord()
         }
     }
 
-    private fun play() {
-        mediaPlayer = MediaPlayer()
-        try {
-            mediaPlayer?.apply {
-                this.reset()
-                this.setDataSource(afdd.fileDescriptor, afdd.startOffset, afdd.length)
-                this.isLooping = true
-                this.prepare()
-                this.start()
-            }
-        } catch (e: Exception) {
-            Log.d("nanchen2251", "播放音乐失败")
-        } finally {
+    private fun checkPermission() {
+        permissionHelper.check(requireActivity(), permissions,
+            onSuccess = {
+                startRecord()
+            },
+            onError = {
+                permissionHelper.request(this, permissions, permissionRequestCode)
+            })
+    }
 
+    private fun startRecord() {
+        if (hbRecorder.isBusyRecording) {
+            hbRecorder.stopScreenRecording()
+            dataBinding.btnStart.text = "Start"
+            dataBinding.btnPause.isEnabled = false
+        } else {
+            quickSettings()
+            val a = Context.MEDIA_PROJECTION_SERVICE
+            val mediaProjectionManager =
+                requireContext().getSystemService(a) as MediaProjectionManager?
+            val permissionIntent = mediaProjectionManager?.createScreenCaptureIntent()
+            startActivityForResult(permissionIntent, screenRecordRequestCode)
         }
     }
 
-    private fun releasePlayer() {
-        mediaPlayer?.apply {
-            stop()
-            release()
+    private fun pauseRecord() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            if (hbRecorder.isRecordingPaused) {
+                hbRecorder.resumeScreenRecording()
+                dataBinding.btnPause.text = "Pause"
+            } else {
+                hbRecorder.pauseScreenRecording()
+                dataBinding.btnPause.text = "Resume"
+            }
+        } else {
+            showToast("You need Android 7 or more to do this")
         }
-        mediaPlayer = null
+    }
+
+    private fun quickSettings() {
+        hbRecorder.setAudioBitrate(128000)
+        hbRecorder.setAudioSamplingRate(44100)
+        hbRecorder.recordHDVideo(true)
+        hbRecorder.isAudioEnabled(true)
+        //Customise Notification
+//        hbRecorder.setNotificationSmallIcon(R.drawable.ic_launcher_foreground)
+        //hbRecorder.setNotificationSmallIconVector(R.drawable.ic_baseline_videocam_24);
+        hbRecorder.setNotificationTitle("a")
+        hbRecorder.setNotificationDescription("b")
+    }
+
+    private fun setOutputPath() {
+        val filename: String = StringHelper.getDateTimeNow()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val resolver = requireActivity().contentResolver
+            val contentValues = ContentValues()
+            contentValues.put(MediaStore.Video.Media.RELATIVE_PATH, FileHelper.shortPath)
+            contentValues.put(MediaStore.Video.Media.TITLE, filename)
+            contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, filename)
+            contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "video/mp4")
+            val mUri = resolver.insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, contentValues)
+            //FILE NAME SHOULD BE THE SAME
+            hbRecorder.fileName = filename
+            hbRecorder.setOutputUri(mUri)
+        } else {
+            FileHelper.createAppFolder()
+            hbRecorder.setOutputPath(FileHelper.path)
+        }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-//        super.onActivityResult(requestCode, resultCode, data)
-        if (data != null) {
-            screenRecorderHelper?.onActivityResult(requestCode, resultCode, data)
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == screenRecordRequestCode) {
+            if (resultCode == Activity.RESULT_OK) {
+                //Set file path or Uri depending on SDK version
+                setOutputPath()
+                //Start screen recording
+                hbRecorder.startScreenRecording(data, resultCode, activity)
+                dataBinding.btnStart.text = "Stop"
+                dataBinding.btnPause.isEnabled = true
+            }
         }
     }
 
-    override fun onDestroy() {
-        screenRecorderHelper?.clearAll()
-        afdd.close()
-        super.onDestroy()
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        showToast("Don't have permissions for recording")
+    }
+
+    override fun HBRecorderOnStart() {
+
+    }
+
+    override fun HBRecorderOnComplete() {
+
+    }
+
+    override fun HBRecorderOnError(errorCode: Int, reason: String?) {
+
     }
 }
