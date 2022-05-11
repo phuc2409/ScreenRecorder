@@ -9,7 +9,9 @@ import android.media.projection.MediaProjectionManager
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
+import android.util.Log
 import android.view.View
+import com.hbisoft.hbrecorder.Constants
 import com.hbisoft.hbrecorder.HBRecorder
 import com.hbisoft.hbrecorder.HBRecorderListener
 import com.screenrecorder.R
@@ -65,8 +67,6 @@ class ScreenRecorderFragment :
     private fun startRecord() {
         if (hbRecorder.isBusyRecording) {
             hbRecorder.stopScreenRecording()
-            dataBinding.btnStart.text = "Start"
-            dataBinding.btnPause.isEnabled = false
         } else {
             quickSettings()
             val a = Context.MEDIA_PROJECTION_SERVICE
@@ -96,7 +96,7 @@ class ScreenRecorderFragment :
         hbRecorder.setAudioSamplingRate(44100)
         hbRecorder.recordHDVideo(true)
         hbRecorder.isAudioEnabled(true)
-        //Customise Notification
+        //Customise Notification with png icon
 //        hbRecorder.setNotificationSmallIcon(R.drawable.ic_launcher_foreground)
         //hbRecorder.setNotificationSmallIconVector(R.drawable.ic_baseline_videocam_24);
         hbRecorder.setNotificationTitle("a")
@@ -147,14 +147,35 @@ class ScreenRecorderFragment :
     }
 
     override fun HBRecorderOnStart() {
-
+        Log.d("Record", "Start record")
     }
 
     override fun HBRecorderOnComplete() {
-
+        dataBinding.btnStart.text = "Start"
+        dataBinding.btnPause.isEnabled = false
     }
 
     override fun HBRecorderOnError(errorCode: Int, reason: String?) {
+        // Error 38 happens when
+        // - the selected video encoder is not supported
+        // - the output format is not supported
+        // - if another app is using the microphone
 
+        //It is best to use device default
+
+        when (errorCode) {
+            Constants.SETTINGS_ERROR -> {
+                showToast("Some settings are not supported by your device")
+            }
+            Constants.MAX_FILE_SIZE_REACHED_ERROR -> {
+                showToast("The file reached the designated max size")
+            }
+            else -> {
+                showToast("Record error")
+            }
+        }
+        Log.e("Record", reason!!)
+
+        dataBinding.btnStart.text = "Start"
     }
 }
