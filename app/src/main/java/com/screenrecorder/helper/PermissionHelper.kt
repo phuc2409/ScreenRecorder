@@ -7,9 +7,8 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 
 class PermissionHelper(private val context: Context) {
-    private val requestCode = 1000
 
-    fun request(permissions: Array<String>) {
+    fun request(permissions: Array<String>, requestCode: Int) {
         ActivityCompat.requestPermissions(context as Activity, permissions, requestCode)
     }
 

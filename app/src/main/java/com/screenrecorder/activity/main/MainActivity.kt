@@ -16,6 +16,7 @@ import com.screenrecorder.helper.PermissionHelper
 
 class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
     private lateinit var permissionHelper: PermissionHelper
+    private val permissionRequestCode = 111
 
     private val permissions = arrayOf(
         Manifest.permission.READ_EXTERNAL_STORAGE,
@@ -28,7 +29,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
         super.onCreate(savedInstanceState)
         permissionHelper = PermissionHelper(this)
         setupView()
-        permissionHelper.request(permissions)
+        permissionHelper.request(permissions, permissionRequestCode)
     }
 
     private fun setupView() {
