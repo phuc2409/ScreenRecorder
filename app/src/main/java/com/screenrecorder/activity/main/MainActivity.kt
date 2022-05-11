@@ -2,8 +2,6 @@ package com.screenrecorder.activity.main
 
 import android.Manifest
 import android.os.Bundle
-import android.widget.Toast
-import androidx.fragment.app.Fragment
 import com.screenrecorder.R
 import com.screenrecorder.activity.base.BaseActivity
 import com.screenrecorder.databinding.ActivityMainBinding
@@ -21,15 +19,14 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
     private val permissions = arrayOf(
         Manifest.permission.READ_EXTERNAL_STORAGE,
         Manifest.permission.WRITE_EXTERNAL_STORAGE,
-        Manifest.permission.RECORD_AUDIO,
-        Manifest.permission.FOREGROUND_SERVICE
+        Manifest.permission.RECORD_AUDIO
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        permissionHelper = PermissionHelper(this)
+        permissionHelper = PermissionHelper()
         setupView()
-        permissionHelper.request(permissions, permissionRequestCode)
+        permissionHelper.request(this, permissions, permissionRequestCode)
     }
 
     private fun setupView() {
@@ -67,12 +64,12 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        permissionHelper.check(this.permissions,
+        permissionHelper.check(this, this.permissions,
             onSuccess = {
-                Toast.makeText(this, "Yes", Toast.LENGTH_SHORT).show()
+                showToast("Full permissions")
             },
             onError = {
-                Toast.makeText(this, "No", Toast.LENGTH_SHORT).show()
+                showToast("Not full permissions")
             })
     }
 }

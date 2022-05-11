@@ -2,6 +2,7 @@ package com.screenrecorder.activity.base
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.widget.Toast
 import androidx.databinding.DataBindingUtil
 import androidx.databinding.ViewDataBinding
 import androidx.fragment.app.Fragment
@@ -19,5 +20,9 @@ abstract class BaseActivity<T : ViewDataBinding>(private val layoutId: Int) : Ap
         transaction.replace(oldId, fragment)
         transaction.addToBackStack(null)
         transaction.commit()
+    }
+
+    protected fun showToast(s: String) {
+        Toast.makeText(this, s, Toast.LENGTH_SHORT).show()
     }
 }

@@ -1,21 +1,30 @@
 package com.screenrecorder.helper
 
 import android.app.Activity
-import android.content.Context
 import android.content.pm.PackageManager
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.fragment.app.Fragment
 
-class PermissionHelper(private val context: Context) {
+class PermissionHelper() {
 
-    fun request(permissions: Array<String>, requestCode: Int) {
-        ActivityCompat.requestPermissions(context as Activity, permissions, requestCode)
+    fun request(activity: Activity, permissions: Array<String>, requestCode: Int) {
+        ActivityCompat.requestPermissions(activity, permissions, requestCode)
     }
 
-    fun check(permissions: Array<String>, onSuccess: () -> Unit, onError: () -> Unit) {
+    fun request(fragment: Fragment, permissions: Array<String>, requestCode: Int) {
+        fragment.requestPermissions(permissions, requestCode)
+    }
+
+    fun check(
+        activity: Activity,
+        permissions: Array<String>,
+        onSuccess: () -> Unit,
+        onError: () -> Unit
+    ) {
         for (i in permissions) {
             if (ContextCompat.checkSelfPermission(
-                    context as Activity,
+                    activity,
                     i
                 ) != PackageManager.PERMISSION_GRANTED
             ) {
