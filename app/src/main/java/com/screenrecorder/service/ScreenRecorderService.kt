@@ -6,6 +6,7 @@ import android.graphics.Color
 import android.graphics.drawable.Icon
 import android.os.Build
 import android.os.IBinder
+import androidx.annotation.RequiresApi
 import com.screenrecorder.R
 import com.screenrecorder.receiver.ScreenRecorderReceiver
 
@@ -22,37 +23,11 @@ class ScreenRecorderService : Service() {
             channel.lockscreenVisibility = Notification.VISIBILITY_PUBLIC
             val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
             manager.createNotificationChannel(channel)
-            val notification: Notification
 
-            val startRecordIntent = Intent(this, ScreenRecorderReceiver::class.java)
-            startRecordIntent.putExtra("action", "start")
-            val startRecordPendingIntent: PendingIntent = if (Build.VERSION.SDK_INT >= 31) {
-                PendingIntent.getBroadcast(this, 0, startRecordIntent, PendingIntent.FLAG_MUTABLE)
-            } else {
-                PendingIntent.getBroadcast(this, 0, startRecordIntent, 0)
-            }
-            val startAction = Notification.Action.Builder(
-                Icon.createWithResource(this, R.drawable.ic_camera),
-                "Start",
-                startRecordPendingIntent
-            ).build()
-
-            val pauseRecordIntent = Intent(this, ScreenRecorderReceiver::class.java)
-            pauseRecordIntent.putExtra("action", "pause")
-            val pauseRecordPendingIntent: PendingIntent = if (Build.VERSION.SDK_INT >= 31) {
-                PendingIntent.getBroadcast(this, 1, pauseRecordIntent, PendingIntent.FLAG_MUTABLE)
-            } else {
-                PendingIntent.getBroadcast(this, 1, pauseRecordIntent, 0)
-            }
-            val pauseAction = Notification.Action.Builder(
-                Icon.createWithResource(this, R.drawable.ic_settings),
-                "Pause",
-                pauseRecordPendingIntent
-            ).build()
-
-            notification = Notification.Builder(applicationContext, channelId).setOngoing(true)
+            val notification = Notification.Builder(applicationContext, channelId).setOngoing(true)
                 .setSmallIcon(R.drawable.ic_video).setContentText("Drag down")
-                .addAction(startAction).addAction(pauseAction).build()
+                .addAction(createAction("Start", "start", 0))
+                .addAction(createAction("Pause", "pause", 1)).build()
 
             startForeground(102, notification)
         } else {
@@ -60,6 +35,27 @@ class ScreenRecorderService : Service() {
         }
 
         return START_STICKY
+    }
+
+    @RequiresApi(Build.VERSION_CODES.M)
+    private fun createAction(title: String, action: String, requestCode: Int): Notification.Action {
+        val startRecordIntent = Intent(this, ScreenRecorderReceiver::class.java)
+        startRecordIntent.putExtra("action", action)
+        val startRecordPendingIntent: PendingIntent = if (Build.VERSION.SDK_INT >= 31) {
+            PendingIntent.getBroadcast(
+                this,
+                requestCode,
+                startRecordIntent,
+                PendingIntent.FLAG_MUTABLE
+            )
+        } else {
+            PendingIntent.getBroadcast(this, requestCode, startRecordIntent, 0)
+        }
+        return Notification.Action.Builder(
+            Icon.createWithResource(this, R.drawable.ic_camera),
+            title,
+            startRecordPendingIntent
+        ).build()
     }
 
     override fun onBind(intent: Intent): IBinder? {
