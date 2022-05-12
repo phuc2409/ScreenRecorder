@@ -2,9 +2,7 @@ package com.screenrecorder.fragment.screen_recorder
 
 import android.Manifest
 import android.app.Activity
-import android.content.ContentValues
-import android.content.Context
-import android.content.Intent
+import android.content.*
 import android.media.projection.MediaProjectionManager
 import android.os.Build
 import android.os.Bundle
@@ -21,6 +19,7 @@ import com.screenrecorder.fragment.base.BaseFragment
 import com.screenrecorder.helper.FileHelper
 import com.screenrecorder.helper.PermissionHelper
 import com.screenrecorder.helper.StringHelper
+import com.screenrecorder.service.ScreenRecorderService
 
 class ScreenRecorderFragment :
     BaseFragment<FragmentScreenRecorderBinding>(R.layout.fragment_screen_recorder),
@@ -37,10 +36,28 @@ class ScreenRecorderFragment :
     )
 
     private lateinit var hbRecorder: HBRecorder
+    private lateinit var screenRecorderIntent: Intent
+
+    private val receiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            val action = intent.getStringExtra("action")
+            if (action == "start") {
+                checkPermission()
+            } else if (action == "pause") {
+                pauseRecord()
+            }
+        }
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         permissionHelper = PermissionHelper()
         hbRecorder = HBRecorder(context, this)
+        requireActivity().registerReceiver(
+            receiver,
+            IntentFilter("com.screenrecorder.SCREEN_RECORDER")
+        )
+        screenRecorderIntent = Intent(requireActivity(), ScreenRecorderService::class.java)
+        requireActivity().startService(screenRecorderIntent)
         setupView()
     }
 
@@ -71,9 +88,8 @@ class ScreenRecorderFragment :
         } else {
 //            quickSettings()
             customSettings()
-            val a = Context.MEDIA_PROJECTION_SERVICE
             val mediaProjectionManager =
-                requireContext().getSystemService(a) as MediaProjectionManager?
+                requireContext().getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager?
             val permissionIntent = mediaProjectionManager?.createScreenCaptureIntent()
             startActivityForResult(permissionIntent, screenRecordRequestCode)
         }
@@ -81,12 +97,14 @@ class ScreenRecorderFragment :
 
     private fun pauseRecord() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            if (hbRecorder.isRecordingPaused) {
-                hbRecorder.resumeScreenRecording()
-                dataBinding.btnPause.text = "Pause"
-            } else {
-                hbRecorder.pauseScreenRecording()
-                dataBinding.btnPause.text = "Resume"
+            if (hbRecorder.isBusyRecording) {
+                if (hbRecorder.isRecordingPaused) {
+                    hbRecorder.resumeScreenRecording()
+                    dataBinding.btnPause.text = "Pause"
+                } else {
+                    hbRecorder.pauseScreenRecording()
+                    dataBinding.btnPause.text = "Resume"
+                }
             }
         } else {
             showToast("You need Android 7 or more to do this")
@@ -101,8 +119,8 @@ class ScreenRecorderFragment :
         //Customise Notification with png icon
 //        hbRecorder.setNotificationSmallIcon(R.drawable.ic_launcher_foreground)
         //hbRecorder.setNotificationSmallIconVector(R.drawable.ic_baseline_videocam_24);
-        hbRecorder.setNotificationTitle("a")
-        hbRecorder.setNotificationDescription("b")
+        hbRecorder.setNotificationTitle("Screen Recorder")
+        hbRecorder.setNotificationDescription("Recording...")
     }
 
     private fun customSettings() {
@@ -242,6 +260,11 @@ class ScreenRecorderFragment :
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         showToast("Don't have permissions for recording")
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        requireActivity().stopService(screenRecorderIntent)
     }
 
     override fun HBRecorderOnStart() {
