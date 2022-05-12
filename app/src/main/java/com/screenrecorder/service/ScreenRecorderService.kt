@@ -39,22 +39,17 @@ class ScreenRecorderService : Service() {
 
     @RequiresApi(Build.VERSION_CODES.M)
     private fun createAction(title: String, action: String, requestCode: Int): Notification.Action {
-        val startRecordIntent = Intent(this, ScreenRecorderReceiver::class.java)
-        startRecordIntent.putExtra("action", action)
-        val startRecordPendingIntent: PendingIntent = if (Build.VERSION.SDK_INT >= 31) {
-            PendingIntent.getBroadcast(
-                this,
-                requestCode,
-                startRecordIntent,
-                PendingIntent.FLAG_MUTABLE
-            )
+        val intent = Intent(this, ScreenRecorderReceiver::class.java)
+        intent.putExtra("action", action)
+        val pendingIntent: PendingIntent = if (Build.VERSION.SDK_INT >= 31) {
+            PendingIntent.getBroadcast(this, requestCode, intent, PendingIntent.FLAG_MUTABLE)
         } else {
-            PendingIntent.getBroadcast(this, requestCode, startRecordIntent, 0)
+            PendingIntent.getBroadcast(this, requestCode, intent, 0)
         }
         return Notification.Action.Builder(
             Icon.createWithResource(this, R.drawable.ic_camera),
             title,
-            startRecordPendingIntent
+            pendingIntent
         ).build()
     }
 
