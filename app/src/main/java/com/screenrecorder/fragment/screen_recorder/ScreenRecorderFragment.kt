@@ -19,15 +19,19 @@ import com.screenrecorder.fragment.base.BaseFragment
 import com.screenrecorder.helper.FileHelper
 import com.screenrecorder.helper.PermissionHelper
 import com.screenrecorder.helper.StringHelper
-import com.screenrecorder.service.ScreenRecorderService
+import com.screenrecorder.service.MyScreenRecorderService
 
 class ScreenRecorderFragment :
     BaseFragment<FragmentScreenRecorderBinding>(R.layout.fragment_screen_recorder),
     HBRecorderListener {
+    private var isPlaying = false;
+    private var isStop = false ;
 
     private lateinit var permissionHelper: PermissionHelper
     private val permissionRequestCode = 111
     private val screenRecordRequestCode = 222
+
+
 
     private val permissions = arrayOf(
         Manifest.permission.READ_EXTERNAL_STORAGE,
@@ -45,6 +49,8 @@ class ScreenRecorderFragment :
                 checkPermission()
             } else if (action == "pause") {
                 pauseRecord()
+            } else {
+                requireActivity().stopService(Intent(requireActivity(), MyScreenRecorderService::class.java))
             }
         }
     }
@@ -56,7 +62,7 @@ class ScreenRecorderFragment :
             receiver,
             IntentFilter("com.screenrecorder.SCREEN_RECORDER")
         )
-        screenRecorderIntent = Intent(requireActivity(), ScreenRecorderService::class.java)
+        screenRecorderIntent = Intent(requireActivity(), MyScreenRecorderService::class.java)
         requireActivity().startService(screenRecorderIntent)
         setupView()
     }
@@ -84,6 +90,7 @@ class ScreenRecorderFragment :
 
     private fun startRecord() {
         if (hbRecorder.isBusyRecording) {
+            isPlaying = false ;
             hbRecorder.stopScreenRecording()
         } else {
 //            quickSettings()
@@ -95,16 +102,27 @@ class ScreenRecorderFragment :
         }
     }
 
+    private fun startService() {
+        var intent = Intent(requireActivity(), MyScreenRecorderService::class.java)
+        intent.putExtra("isplaying", isPlaying)
+        requireActivity().startService(intent)
+    }
+
     private fun pauseRecord() {
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             if (hbRecorder.isBusyRecording) {
                 if (hbRecorder.isRecordingPaused) {
+                    isPlaying = true
                     hbRecorder.resumeScreenRecording()
                     dataBinding.btnPause.text = "Pause"
                 } else {
+                    isPlaying = false
                     hbRecorder.pauseScreenRecording()
                     dataBinding.btnPause.text = "Resume"
                 }
+                startService()
+
             }
         } else {
             showToast("You need Android 7 or more to do this")
@@ -247,10 +265,15 @@ class ScreenRecorderFragment :
                 setOutputPath()
                 //Start screen recording
                 hbRecorder.startScreenRecording(data, resultCode, activity)
-                dataBinding.btnStart.text = "Stop"
-                dataBinding.btnPause.isEnabled = true
+                isPlaying = true
+                hanleButton()
             }
         }
+    }
+
+    private fun hanleButton() {
+        dataBinding.btnStart.text =  if (isPlaying ) "Stop" else "Start"
+        dataBinding.btnPause.isEnabled = isPlaying
     }
 
     override fun onRequestPermissionsResult(
@@ -269,11 +292,15 @@ class ScreenRecorderFragment :
 
     override fun HBRecorderOnStart() {
         Log.d("Record", "Start record")
+        isPlaying = true ;
+        startService()
     }
 
     override fun HBRecorderOnComplete() {
         dataBinding.btnStart.text = "Start"
         dataBinding.btnPause.isEnabled = false
+        isPlaying = false
+        startService()
     }
 
     override fun HBRecorderOnError(errorCode: Int, reason: String?) {

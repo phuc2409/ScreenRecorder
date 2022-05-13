@@ -10,10 +10,20 @@ import androidx.annotation.RequiresApi
 import com.screenrecorder.R
 import com.screenrecorder.receiver.ScreenRecorderReceiver
 
-class ScreenRecorderService : Service() {
+class MyScreenRecorderService : Service() {
+
+    var isPlaying = false
+    var isStop = true;
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         //Notification
+
+        // get data intent
+        if (intent != null) {
+            if (intent.hasExtra("isplaying")) {
+               isPlaying = intent.getBooleanExtra("isplaying",false);
+            }
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channelId = "002"
             val channelName = "RecordNotification"
@@ -23,18 +33,30 @@ class ScreenRecorderService : Service() {
             channel.lockscreenVisibility = Notification.VISIBILITY_PUBLIC
             val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
             manager.createNotificationChannel(channel)
-
+            //
+            val title =  if (!isPlaying) "Start" else "Stop"
+            val action =  if (!isPlaying) "start" else "stop"
             val notification = Notification.Builder(applicationContext, channelId).setOngoing(true)
                 .setSmallIcon(R.drawable.ic_video).setContentText("Drag down")
-                .addAction(createAction("Start", "start", 0))
-                .addAction(createAction("Pause", "pause", 1)).build()
+                .addAction(
+                    createAction(
+                       title,
+                       action,
+                        0
+                    )
+                )
+            if (isPlaying) notification.addAction(createAction("Pause", "pause", 1))
 
-            startForeground(102, notification)
+            startForeground(102, notification.build())
         } else {
             startForeground(102, Notification())
         }
 
         return START_STICKY
+    }
+
+    private fun getDataIntent(intent: Intent) {
+
     }
 
     @RequiresApi(Build.VERSION_CODES.M)

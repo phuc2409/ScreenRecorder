@@ -15,7 +15,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.ScreenRecorder">
         <service
-            android:name=".service.ScreenRecorderService"
+            android:name=".service.MyScreenRecorderService"
             android:enabled="true"
             android:exported="false" />
 
