@@ -2,9 +2,7 @@ package com.screenrecorder.fragment.screen_recorder
 
 import android.Manifest
 import android.app.Activity
-import android.content.ContentValues
-import android.content.Context
-import android.content.Intent
+import android.content.*
 import android.media.projection.MediaProjectionManager
 import android.os.Build
 import android.os.Bundle
@@ -38,9 +36,25 @@ class ScreenRecorderFragment :
 
     private lateinit var hbRecorder: HBRecorder
 
+    private val receiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            val action = intent.getStringExtra("action")
+            if (action == "start" || action == "stop") {
+                checkPermission()
+            } else if (action == "pause" || action == "resume") {
+                pauseRecord()
+            }
+        }
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         permissionHelper = PermissionHelper()
+        requireActivity().registerReceiver(
+            receiver,
+            IntentFilter("com.screenrecorder.SCREEN_RECORDER")
+        )
         hbRecorder = HBRecorder(context, this)
+        hbRecorder.startService(null)
         setupView()
     }
 
@@ -66,7 +80,7 @@ class ScreenRecorderFragment :
     }
 
     private fun startRecord() {
-        if (hbRecorder.isBusyRecording) {
+        if (hbRecorder.isRecording) {
             hbRecorder.stopScreenRecording()
         } else {
 //            quickSettings()
@@ -229,8 +243,6 @@ class ScreenRecorderFragment :
                 setOutputPath()
                 //Start screen recording
                 hbRecorder.startScreenRecording(data, resultCode, activity)
-                dataBinding.btnStart.text = "Stop"
-                dataBinding.btnPause.isEnabled = true
             }
         }
     }
@@ -244,8 +256,15 @@ class ScreenRecorderFragment :
         showToast("Don't have permissions for recording")
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        hbRecorder.stopService()
+    }
+
     override fun HBRecorderOnStart() {
         Log.d("Record", "Start record")
+        dataBinding.btnStart.text = "Stop"
+        dataBinding.btnPause.isEnabled = true
     }
 
     override fun HBRecorderOnComplete() {

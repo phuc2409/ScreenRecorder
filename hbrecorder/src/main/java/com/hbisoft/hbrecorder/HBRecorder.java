@@ -68,6 +68,7 @@ public class HBRecorder implements MyListener {
     private long maxFileSize = NO_SPECIFIED_MAX_SIZE; // Default no max size
     boolean wasOnErrorCalled = false;
     Intent service;
+    boolean isRecording = false;
     boolean isPaused = false;
     boolean isMaxDurationSet = false;
     int maxDuration = 0;
@@ -76,6 +77,7 @@ public class HBRecorder implements MyListener {
     public HBRecorder(Context context, HBRecorderListener listener) {
         this.context = context.getApplicationContext();
         this.hbRecorderListener = listener;
+        service = new Intent(context, ScreenRecordService.class);
         setScreenDensity();
     }
 
@@ -214,13 +216,18 @@ public class HBRecorder implements MyListener {
     public void startScreenRecording(Intent data, int resultCode, Activity activity) {
         this.resultCode = resultCode;
         this.activity = activity;
+        service.setAction("start");
         startService(data);
     }
 
     /*Stop screen recording*/
     public void stopScreenRecording() {
-        Intent service = new Intent(context, ScreenRecordService.class);
-        context.stopService(service);
+//        Intent service = new Intent(context, ScreenRecordService.class);
+//        context.stopService(service);
+        if (service != null) {
+            service.setAction("stop");
+            context.startService(service);
+        }
     }
 
     /*Pause screen recording*/
@@ -248,7 +255,7 @@ public class HBRecorder implements MyListener {
         return isPaused;
     }
 
-    /*Check if recording is in progress*/
+    /*Check if recording servive is in progress*/
     public boolean isBusyRecording() {
         ActivityManager manager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
         if (manager != null) {
@@ -259,6 +266,10 @@ public class HBRecorder implements MyListener {
             }
         }
         return false;
+    }
+
+    public boolean isRecording() {
+        return isRecording;
     }
 
     /*Change notification icon Drawable*/
@@ -294,7 +305,7 @@ public class HBRecorder implements MyListener {
     }
 
     /*Start recording service*/
-    private void startService(Intent data) {
+    public void startService(Intent data) {
         try {
             if (!mWasUriSet) {
                 if (outputPath != null) {
@@ -308,7 +319,7 @@ public class HBRecorder implements MyListener {
                 observer.startWatching();
             }
 
-            service = new Intent(context, ScreenRecordService.class);
+//            service = new Intent(context, ScreenRecordService.class);
             if (mWasUriSet) {
                 service.putExtra("mUri", mUri.toString());
             }
@@ -353,9 +364,11 @@ public class HBRecorder implements MyListener {
                             }
                             wasOnErrorCalled = true;
                             if (errorCode > 0) {
+                                isRecording = false;
                                 hbRecorderListener.HBRecorderOnError(errorCode, errorListener);
                             }
                             else {
+                                isRecording = false;
                                 hbRecorderListener.HBRecorderOnError(GENERAL_ERROR, errorListener);
                             }
                             try {
@@ -372,11 +385,13 @@ public class HBRecorder implements MyListener {
                             stopCountDown();
                             //OnComplete for when Uri was passed
                             if (mWasUriSet && !wasOnErrorCalled) {
+                                isRecording = false;
                                 hbRecorderListener.HBRecorderOnComplete();
                             }
                             wasOnErrorCalled = false;
                         }
                         else if (onStartCode != 0) {
+                            isRecording = true;
                             hbRecorderListener.HBRecorderOnStart();
                             //Check if max duration was set and start count down
                             if (isMaxDurationSet) {
@@ -391,9 +406,13 @@ public class HBRecorder implements MyListener {
             context.startService(service);
         }
         catch (Exception e) {
+            isRecording = false;
             hbRecorderListener.HBRecorderOnError(0, Log.getStackTraceString(e));
         }
+    }
 
+    public void stopService() {
+        context.stopService(service);
     }
 
     /*CountdownTimer for when max duration is set*/
@@ -416,6 +435,7 @@ public class HBRecorder implements MyListener {
                     try {
                         stopScreenRecording();
                         observer.stopWatching();
+                        isRecording = false;
                         hbRecorderListener.HBRecorderOnComplete();
                     }
                     catch (Exception e) {
@@ -442,6 +462,7 @@ public class HBRecorder implements MyListener {
     @Override
     public void callback() {
         observer.stopWatching();
+        isRecording = false;
         hbRecorderListener.HBRecorderOnComplete();
     }
 }

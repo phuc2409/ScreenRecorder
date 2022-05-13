@@ -8,7 +8,9 @@ public class NotificationReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        Intent service = new Intent(context, ScreenRecordService.class);
-        context.stopService(service);
+        String action = intent.getStringExtra("action");
+        Intent screenRecorderIntent = new Intent("com.screenrecorder.SCREEN_RECORDER");
+        screenRecorderIntent.putExtra("action", action);
+        context.sendBroadcast(screenRecorderIntent);
     }
 }
