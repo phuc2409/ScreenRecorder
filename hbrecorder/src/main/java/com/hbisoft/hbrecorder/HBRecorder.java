@@ -10,7 +10,6 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.CountDownTimer;
 import android.os.Environment;
 
 import androidx.annotation.DrawableRes;
@@ -80,7 +79,7 @@ public class HBRecorder implements MyListener {
         setScreenDensity();
     }
 
-    public void setOrientationHint(int orientationInDegrees){
+    public void setOrientationHint(int orientationInDegrees) {
         orientation = orientationInDegrees;
     }
 
@@ -91,14 +90,15 @@ public class HBRecorder implements MyListener {
 
     Uri mUri;
     boolean mWasUriSet = false;
+
     @RequiresApi(api = Build.VERSION_CODES.Q)
-    public void setOutputUri(Uri uri){
+    public void setOutputUri(Uri uri) {
         mWasUriSet = true;
         mUri = uri;
     }
 
     /*Set max duration in seconds */
-    public void setMaxDuration(int seconds){
+    public void setMaxDuration(int seconds) {
         isMaxDurationSet = true;
         maxDuration = seconds * 1000;
     }
@@ -108,7 +108,7 @@ public class HBRecorder implements MyListener {
         maxFileSize = fileSize;
     }
 
-    public boolean wasUriSet(){
+    public boolean wasUriSet() {
         return mWasUriSet;
     }
 
@@ -135,7 +135,7 @@ public class HBRecorder implements MyListener {
 
     /*Set Audio Source*/
     //MUST BE ONE OF THE FOLLOWING - https://developer.android.com/reference/android/media/MediaRecorder.AudioSource.html
-    public void setAudioSource(String source){
+    public void setAudioSource(String source) {
         audioSource = source;
 
     }
@@ -147,30 +147,30 @@ public class HBRecorder implements MyListener {
 
     /*Set Video Encoder*/
     //MUST BE ONE OF THE FOLLOWING - https://developer.android.com/reference/android/media/MediaRecorder.VideoEncoder.html
-    public void setVideoEncoder(String encoder){
+    public void setVideoEncoder(String encoder) {
         videoEncoder = encoder;
 
     }
 
     //Enable Custom Settings
-    public void enableCustomSettings(){
+    public void enableCustomSettings() {
         enableCustomSettings = true;
 
     }
 
     //Set Video Frame Rate
-    public void setVideoFrameRate(int fps){
+    public void setVideoFrameRate(int fps) {
         videoFrameRate = fps;
     }
 
     //Set Video BitRate
-    public void setVideoBitrate(int bitrate){
+    public void setVideoBitrate(int bitrate) {
         videoBitrate = bitrate;
     }
 
     //Set Output Format
     //MUST BE ONE OF THE FOLLOWING - https://developer.android.com/reference/android/media/MediaRecorder.OutputFormat.html
-    public void setOutputFormat(String format){
+    public void setOutputFormat(String format) {
         outputFormat = format;
     }
 
@@ -181,21 +181,21 @@ public class HBRecorder implements MyListener {
     }
 
     //Get default width
-    public int getDefaultWidth(){
+    public int getDefaultWidth() {
         HBRecorderCodecInfo hbRecorderCodecInfo = new HBRecorderCodecInfo();
         hbRecorderCodecInfo.setContext(context);
         return hbRecorderCodecInfo.getMaxSupportedWidth();
     }
 
     //Get default height
-    public int getDefaultHeight(){
+    public int getDefaultHeight() {
         HBRecorderCodecInfo hbRecorderCodecInfo = new HBRecorderCodecInfo();
         hbRecorderCodecInfo.setContext(context);
         return hbRecorderCodecInfo.getMaxSupportedHeight();
     }
 
     //Set Custom Dimensions (NOTE - YOUR DEVICE MIGHT NOT SUPPORT THE SIZE YOU PASS IT)
-    public void setScreenDimensions(int heightInPX, int widthInPX){
+    public void setScreenDimensions(int heightInPX, int widthInPX) {
         mScreenHeight = heightInPX;
         mScreenWidth = widthInPX;
     }
@@ -225,8 +225,8 @@ public class HBRecorder implements MyListener {
 
     /*Pause screen recording*/
     @RequiresApi(api = Build.VERSION_CODES.N)
-    public void pauseScreenRecording(){
-        if (service != null){
+    public void pauseScreenRecording() {
+        if (service != null) {
             isPaused = true;
             service.setAction("pause");
             context.startService(service);
@@ -235,8 +235,8 @@ public class HBRecorder implements MyListener {
 
     /*Pause screen recording*/
     @RequiresApi(api = Build.VERSION_CODES.N)
-    public void resumeScreenRecording(){
-        if (service != null){
+    public void resumeScreenRecording() {
+        if (service != null) {
             isPaused = false;
             service.setAction("resume");
             context.startService(service);
@@ -244,7 +244,7 @@ public class HBRecorder implements MyListener {
     }
 
     /*Check if video is paused*/
-    public boolean isRecordingPaused(){
+    public boolean isRecordingPaused() {
         return isPaused;
     }
 
@@ -275,7 +275,7 @@ public class HBRecorder implements MyListener {
     }
 
     /*Change notification icon using byte[]*/
-    public void setNotificationSmallIcon(byte[] bytes)  {
+    public void setNotificationSmallIcon(byte[] bytes) {
         byteArray = bytes;
     }
 
@@ -289,7 +289,7 @@ public class HBRecorder implements MyListener {
         notificationDescription = Description;
     }
 
-    public void setNotificationButtonText(String string){
+    public void setNotificationButtonText(String string) {
         notificationButtonText = string;
     }
 
@@ -301,7 +301,8 @@ public class HBRecorder implements MyListener {
                     File file = new File(outputPath);
                     String parent = file.getParent();
                     observer = new FileObserver(parent, activity, HBRecorder.this);
-                } else {
+                }
+                else {
                     observer = new FileObserver(String.valueOf(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES)), activity, HBRecorder.this);
                 }
                 observer.startWatching();
@@ -329,7 +330,7 @@ public class HBRecorder implements MyListener {
             service.putExtra("notificationDescription", notificationDescription);
             service.putExtra("notificationButtonText", notificationButtonText);
             service.putExtra("enableCustomSettings", enableCustomSettings);
-            service.putExtra("audioSource",audioSource);
+            service.putExtra("audioSource", audioSource);
             service.putExtra("videoEncoder", videoEncoder);
 
             service.putExtra("videoFrameRate", videoFrameRate);
@@ -351,19 +352,22 @@ public class HBRecorder implements MyListener {
                                 observer.stopWatching();
                             }
                             wasOnErrorCalled = true;
-                            if ( errorCode > 0 ) {
+                            if (errorCode > 0) {
                                 hbRecorderListener.HBRecorderOnError(errorCode, errorListener);
-                            } else {
+                            }
+                            else {
                                 hbRecorderListener.HBRecorderOnError(GENERAL_ERROR, errorListener);
                             }
                             try {
                                 Intent mService = new Intent(context, ScreenRecordService.class);
                                 context.stopService(mService);
-                            }catch (Exception e){
+                            }
+                            catch (Exception e) {
                                 // Can be ignored
                             }
 
-                        }else if (onComplete != null){
+                        }
+                        else if (onComplete != null) {
                             //Stop countdown if it was set
                             stopCountDown();
                             //OnComplete for when Uri was passed
@@ -371,10 +375,11 @@ public class HBRecorder implements MyListener {
                                 hbRecorderListener.HBRecorderOnComplete();
                             }
                             wasOnErrorCalled = false;
-                        }else if (onStartCode != 0){
+                        }
+                        else if (onStartCode != 0) {
                             hbRecorderListener.HBRecorderOnStart();
                             //Check if max duration was set and start count down
-                            if (isMaxDurationSet){
+                            if (isMaxDurationSet) {
                                 startCountdown();
                             }
                         }
@@ -384,7 +389,8 @@ public class HBRecorder implements MyListener {
             // Max file size
             service.putExtra(MAX_FILE_SIZE_KEY, maxFileSize);
             context.startService(service);
-        }catch (Exception e){
+        }
+        catch (Exception e) {
             hbRecorderListener.HBRecorderOnError(0, Log.getStackTraceString(e));
         }
 
@@ -392,6 +398,7 @@ public class HBRecorder implements MyListener {
 
     /*CountdownTimer for when max duration is set*/
     Countdown countDown = null;
+
     private void startCountdown() {
         countDown = new Countdown(maxDuration, 1000, 0) {
             @Override
@@ -405,16 +412,14 @@ public class HBRecorder implements MyListener {
                 onTick(0);
                 // Since the timer is running on a different thread
                 // UI chances should be called from the UI Thread
-                activity.runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            stopScreenRecording();
-                            observer.stopWatching();
-                            hbRecorderListener.HBRecorderOnComplete();
-                        } catch (Exception e){
-                            e.printStackTrace();
-                        }
+                activity.runOnUiThread(() -> {
+                    try {
+                        stopScreenRecording();
+                        observer.stopWatching();
+                        hbRecorderListener.HBRecorderOnComplete();
+                    }
+                    catch (Exception e) {
+                        e.printStackTrace();
                     }
                 });
             }
@@ -427,7 +432,7 @@ public class HBRecorder implements MyListener {
         countDown.start();
     }
 
-    private void stopCountDown(){
+    private void stopCountDown() {
         if (countDown != null) {
             countDown.stop();
         }
